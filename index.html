@@ -361,6 +361,8 @@ const P2={body:new Path2D('M50 14c5 0 8 3 11 8l24 41c4 8-1 17-10 17H25c-9 0-14-9
 function rrect(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()}
 function fit(x,s,max){if(x.measureText(s).width<=max)return s;const a=Array.from(s);while(a.length>1&&x.measureText(a.join('')+'…').width>max)a.pop();return a.join('').trimEnd()+'…'}
 function txt(x,s,px,py,{size=40,weight=700,color=CC.ink,align='center',max=0}={}){x.font=`${weight} ${Math.round(size)}px ${CF}`;x.fillStyle=color;x.textAlign=align;x.textBaseline='middle';x.fillText(max?fit(x,s,max):s,px,py)}
+function titleFit(x,s,px,py,size,max){s=String(s||'').trim();if(!s)return;let z=size;x.font=`800 ${z}px ${CF}`;while(z>48&&x.measureText(s).width>max){z-=2;x.font=`800 ${z}px ${CF}`}txt(x,s,px,py,{size:z,weight:800,max})}
+const defaultTitle=(kind,data)=>kind==='meal'?`My ${T(data.type).k} ${T(data.type).e}`:dayKey(data[0].at)===dayKey(Date.now())?'What I ate today':'What I ate';
 async function imgFrom(url){if(!url)return null;const i=new Image();i.src=url;await i.decode();return i}
 function cover(x,img,a,b,s){const w=img.naturalWidth,h=img.naturalHeight,m=Math.min(w,h);x.drawImage(img,(w-m)/2,(h-m)/2,m,m,a,b,s,s)}
 function cardBg(x,W,H){x.fillStyle=CC.bg;x.fillRect(0,0,W,H);x.fillStyle=CC.dot;const sp=56;for(let y=0,r=0;y<H+sp;y+=sp,r++)for(let a=r%2?sp/2:0;a<W+sp;a+=sp){x.beginPath();x.arc(a,y,5.5,0,7);x.fill()}}
@@ -383,16 +385,16 @@ function brand(x,W,y){const label='logged with Nibble';x.font=`700 34px ${CF}`;c
   x.save();x.shadowColor='rgba(60,40,50,.14)';x.shadowBlur=24;x.shadowOffsetY=8;x.fillStyle='#fff';rrect(x,l,y-ph/2,pw,ph,ph/2);x.fill();x.restore();
   oni(x,l+20,y-33,68);txt(x,label,l+100,y,{size:34,align:'left',color:CC.rose})}
 function canvasFor(fmt){const c=document.createElement('canvas');c.width=1080;c.height=fmt==='story'?1920:1350;const x=c.getContext('2d');cardBg(x,c.width,c.height);return[c,x]}
-async function mealCard(m,fmt){const[c,x]=canvasFor(fmt),W=c.width,H=c.height,st=fmt==='story',t=T(m.type);
+async function mealCard(m,fmt,title){const[c,x]=canvasFor(fmt),W=c.width,H=c.height,st=fmt==='story',t=T(m.type);
   const img=await imgFrom(store.photoUrl(m)).catch(()=>null),hy=st?330:115;
   txt(x,fmtDay(m.at,{weekday:'long',day:'numeric',month:'long'}),W/2,hy,{size:40,color:CC.soft});
-  txt(x,`My ${t.k} ${t.e}`,W/2,hy+(st?95:80),{size:st?92:80,weight:800,max:W-120});
+  titleFit(x,title,W/2,hy+(st?95:80),st?92:80,W-120);
   const size=st?780:640,sub=(m.note||'').trim(),h=size*(1.055+(sub?.27:.19));
   pola(x,{img,cx:W/2,cy:hy+(st?205:160)+h/2,size,rot:-2.5,cap:`${t.e} ${cap(t.k)} · ${fmtTime(m.at)}`,sub,fav:m.fav});
   brand(x,W,st?H-260:H-78);return c}
-async function dayCard(list,fmt){const[c,x]=canvasFor(fmt),W=c.width,H=c.height,st=fmt==='story',d=list[0].at,hy=st?330:105;
+async function dayCard(list,fmt,title){const[c,x]=canvasFor(fmt),W=c.width,H=c.height,st=fmt==='story',d=list[0].at,hy=st?330:105;
   txt(x,fmtDay(d,{weekday:'long',day:'numeric',month:'long'}),W/2,hy,{size:40,color:CC.soft});
-  txt(x,dayKey(d)===dayKey(Date.now())?'What I ate today':'What I ate',W/2,hy+(st?95:76),{size:st?92:76,weight:800});
+  titleFit(x,title,W/2,hy+(st?95:76),st?92:76,W-120);
   txt(x,`${list.length} ${list.length===1?'meal':'meals'} · ${list.map(m=>T(m.type).e).join('')}`,W/2,hy+(st?180:146),{size:38,weight:700,color:CC.soft,max:W-160});
   const shown=list.slice(0,6),n=shown.length,[cols,rows]=n===1?[1,1]:n===2?(st?[1,2]:[2,1]):n<=4?[2,2]:(st?[2,3]:[3,2]);
   const top=hy+(st?240:195),bot=st?H-340:H-150,cw=(W-80)/cols,ch=(bot-top)/rows,size=Math.min(cw*.8,ch*.9/1.36);
@@ -401,15 +403,17 @@ async function dayCard(list,fmt){const[c,x]=canvasFor(fmt),W=c.width,H=c.height,
     pola(x,{img:imgs[i],cx:40+off+cw*(i%cols+.5),cy:top+ch*(row+.5),size,rot:tilts[i%6],cap:`${t.e} ${cap(t.k)}`,sub:fmtTime(m.at),fav:m.fav,tape:i%2===0})});
   if(list.length>6){const a=W-150,b=bot-30;x.fillStyle=CC.rose;x.beginPath();x.arc(a,b,70,0,7);x.fill();txt(x,`+${list.length-6}`,a,b,{size:48,weight:800,color:'#fff'})}
   brand(x,W,st?H-260:H-72);return c}
-function shareSheet(kind,data){let fmt='post',file=null,url=null,job=0;
+function shareSheet(kind,data){let fmt='post',file=null,url=null,job=0,title=defaultTitle(kind,data),typing=0;
   openSheet(s=>{const close=s.close;s.close=()=>{if(url)URL.revokeObjectURL(url);close()};
-    s.el.innerHTML=top(kind==='meal'?'Share this meal 💌':'Share this day 💌')+`<div class="seg"><button data-f="post" aria-pressed="true">Post · Chat</button><button data-f="story" aria-pressed="false">Story</button></div><div class="share-prev"><img id="sp-img" alt="Share picture preview"></div><button class="primary" id="sp-go" disabled>Making it cute…</button><p class="hint">Pick Telegram, WhatsApp or Instagram from the share menu</p>`;
-    wire(s);const go=s.el.querySelector('#sp-go'),im=s.el.querySelector('#sp-img');
+    s.el.innerHTML=top(kind==='meal'?'Share this meal 💌':'Share this day 💌')+`<div class="seg"><button data-f="post" aria-pressed="true">Post · Chat</button><button data-f="story" aria-pressed="false">Story</button></div><div class="lbl" style="margin-top:0">Title</div><input class="field" id="sp-title" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="Leave empty for no title"><div class="share-prev" style="margin-top:14px"><img id="sp-img" alt="Share picture preview"></div><button class="primary" id="sp-go" disabled>Making it cute…</button><p class="hint">Pick Telegram, WhatsApp or Instagram from the share menu</p>`;
+    wire(s);const go=s.el.querySelector('#sp-go'),im=s.el.querySelector('#sp-img'),ti=s.el.querySelector('#sp-title');ti.value=title;
     const build=async()=>{const my=++job;file=null;go.disabled=true;go.textContent='Making it cute…';
-      try{const c=kind==='meal'?await mealCard(data,fmt):await dayCard(data,fmt);const blob=await toBlob(c,.92);if(my!==job)return;
+      try{const c=kind==='meal'?await mealCard(data,fmt,title):await dayCard(data,fmt,title);const blob=await toBlob(c,.92);if(my!==job)return;
         file=new File([blob],`nibble-${dayKey(kind==='meal'?data.at:data[0].at)}.jpg`,{type:'image/jpeg'});if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(blob);im.src=url;go.disabled=false;go.textContent='💌 Share'}
       catch(e){if(my===job){go.textContent='Could not make the picture';toast('Could not make the picture 😢')}}};
     s.el.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{if(fmt===b.dataset.f)return;fmt=b.dataset.f;s.el.querySelectorAll('[data-f]').forEach(o=>o.setAttribute('aria-pressed',o===b));build()});
+    ti.oninput=()=>{title=ti.value;file=null;go.disabled=true;go.textContent='Updating…';clearTimeout(typing);typing=setTimeout(build,350)};
+    ti.onkeydown=e=>{if(e.key==='Enter')ti.blur()};
     go.onclick=()=>{if(file)shareFileNow(file)};
     build()})}
 
