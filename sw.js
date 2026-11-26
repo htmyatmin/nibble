@@ -1,6 +1,6 @@
 // Nibble service worker: makes the app open instantly and work offline.
 // Bump VERSION whenever you change any file so phones pick up the update.
-const VERSION = 'nibble-v1';
+const VERSION = 'nibble-v2';
 const SHELL = [
   './',
   './index.html',
