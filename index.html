@@ -104,6 +104,13 @@ textarea.field{resize:vertical;min-height:84px}
 .wall{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px;padding:8px 4px}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-weight:800;z-index:30;animation:fade .2s;max-width:90vw;text-align:center}
 .hidden{display:none!important}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--card);border-radius:16px;padding:5px;box-shadow:inset 0 0 0 1.5px var(--line);margin-bottom:14px}
+.seg button{padding:10px;border-radius:12px;font-weight:800;min-height:44px}
+.seg button[aria-pressed=true]{background:var(--rose);color:#fff}
+.share-prev{display:grid;place-items:center;min-height:240px}
+.share-prev img{max-width:100%;max-height:50vh;border-radius:18px;box-shadow:0 10px 26px var(--shadow);background:var(--cell)}
+.hint{text-align:center;color:var(--soft);font-weight:700;font-size:13px;margin:10px 0 0}
+.share-btn{display:block;margin:14px auto 0;padding:11px 22px;border-radius:99px;background:var(--pink);color:var(--rose);font-weight:800;min-height:44px}
 .hdr-right{margin-left:auto;display:flex;flex-direction:column;align-items:center;gap:6px}
 .gear{width:40px;height:40px;border-radius:50%;background:var(--card);box-shadow:0 4px 12px var(--shadow);display:grid;place-items:center;color:var(--rose);align-self:flex-end;margin-bottom:-26px;position:relative;z-index:1}
 .install{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:20px;padding:12px 14px;margin-bottom:14px;box-shadow:0 6px 18px var(--shadow);font-weight:700;font-size:15px}
@@ -299,7 +306,8 @@ function addSheet({full,thumb,at}){const st={type:suggest(at),at,note:'',fav:fal
 function mealSheet(id){const m=meals.find(x=>x.id===id);if(!m)return;const st={type:m.type,at:m.at,note:m.note,fav:!!m.fav};
   openSheet(s=>{editor(s,st,esc(fmtDay(m.at,{day:'numeric',month:'short'}))+' · '+esc(fmtTime(m.at)),'Save changes',async()=>{
       await store.update(m.id,{type:st.type,at:st.at,note:st.note,fav:st.fav});s.close();toast('Updated ✨')},
-    `<div class="full"><img alt="Meal photo" src="${esc(store.photoUrl(m))}"></div>`);
+    `<div class="full"><img alt="Meal photo" src="${esc(store.photoUrl(m))}"></div><button class="share-btn" id="m-share">💌 Share this meal</button>`);
+    s.el.querySelector('#m-share').onclick=()=>{const cur=meals.find(x=>x.id===m.id);if(cur)shareSheet('meal',cur)};
     const del=document.createElement('button');del.className='ghost';del.textContent='🗑️ Delete this meal';
     del.onclick=async()=>{if(!del.classList.contains('danger')){del.classList.add('danger');del.textContent='Tap again to delete for good';return}
       del.disabled=true;try{await store.remove(m);s.close();toast('Deleted')}catch(e){del.disabled=false;toast('Could not delete')}};
@@ -310,15 +318,76 @@ function daySheet(k){const [y,mo,d]=k.split('-').map(Number),date=new Date(y,mo-
       s.el.innerHTML=top(esc(fmtDay(date,{weekday:'long',day:'numeric',month:'long'})))+
         (list.length?`<div class="sub" style="color:var(--soft);font-weight:800;margin:-6px 2px 8px">${list.length} ${list.length===1?'meal':'meals'} · ${list.map(m=>T(m.type).e).join('')}</div><div class="wall">${list.map((m,i)=>polaroid(m,i,m.note||fmtTime(m.at))).join('')}</div>`
         :`<div class="empty">${ONI}<h3>No meals logged</h3>${isToday?'Snap something yummy!':'Forgot to snap? Add a photo from your library.'}</div>`)+
-        `<button class="primary" data-add>${isToday?'📸 Snap a meal':'＋ Add to this day'}</button>`;
+        `<button class="primary" data-add>${isToday?'📸 Snap a meal':'＋ Add to this day'}</button>`+
+        (list.length?'<button class="share-btn" data-share>💌 Share this day</button>':'');
       wire(s);
+      const sb=s.el.querySelector('[data-share]');if(sb)sb.onclick=()=>shareSheet('day',byDay()[k]||[]);
       s.el.querySelector('[data-add]').onclick=()=>{const n=new Date();chooser(isToday?Date.now():new Date(y,mo-1,d,n.getHours(),n.getMinutes()).getTime())}};
     s.refresh()})}
 
+/* ---------- share cards ---------- */
+const CF='ui-rounded,"SF Pro Rounded",system-ui,sans-serif';
+const CC={bg:'#fff6ee',dot:'#ffd9e1',ink:'#5b3a43',soft:'#9b7880',rose:'#ef6d8a'};
+const P2={body:new Path2D('M50 14c5 0 8 3 11 8l24 41c4 8-1 17-10 17H25c-9 0-14-9-10-17l24-41c3-5 6-8 11-8z'),smile:new Path2D('M46 50q4 4 8 0'),heart:new Path2D('M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z')};
+function rrect(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()}
+function fit(x,s,max){if(x.measureText(s).width<=max)return s;const a=Array.from(s);while(a.length>1&&x.measureText(a.join('')+'…').width>max)a.pop();return a.join('').trimEnd()+'…'}
+function txt(x,s,px,py,{size=40,weight=700,color=CC.ink,align='center',max=0}={}){x.font=`${weight} ${Math.round(size)}px ${CF}`;x.fillStyle=color;x.textAlign=align;x.textBaseline='middle';x.fillText(max?fit(x,s,max):s,px,py)}
+async function imgFrom(url){if(!url)return null;const i=new Image();i.src=url;await i.decode();return i}
+function cover(x,img,a,b,s){const w=img.naturalWidth,h=img.naturalHeight,m=Math.min(w,h);x.drawImage(img,(w-m)/2,(h-m)/2,m,m,a,b,s,s)}
+function cardBg(x,W,H){x.fillStyle=CC.bg;x.fillRect(0,0,W,H);x.fillStyle=CC.dot;const sp=56;for(let y=0,r=0;y<H+sp;y+=sp,r++)for(let a=r%2?sp/2:0;a<W+sp;a+=sp){x.beginPath();x.arc(a,y,5.5,0,7);x.fill()}}
+function oni(x,a,b,s){x.save();x.translate(a,b);x.scale(s/100,s/100);x.fillStyle='#fffaf5';x.fill(P2.body);x.lineWidth=2.5;x.strokeStyle='#7a4f59';x.stroke(P2.body);
+  x.fillStyle='#3a4a44';rrect(x,38,57,24,23,4);x.fill();x.fillStyle='#5b3a43';for(const e of[40,60]){x.beginPath();x.arc(e,46,3.2,0,7);x.fill()}
+  x.strokeStyle='#5b3a43';x.lineWidth=2.2;x.lineCap='round';x.stroke(P2.smile);x.fillStyle='#ffadbc';for(const e of[33,67]){x.beginPath();x.ellipse(e,52,5,3,0,0,7);x.fill()}x.restore()}
+function heartSticker(x,a,b,r){x.fillStyle=CC.rose;x.beginPath();x.arc(a,b,r,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=r*.18;x.stroke();const k=r/17;x.save();x.translate(a-12*k,b-12.6*k);x.scale(k,k);x.fillStyle='#fff';x.fill(P2.heart);x.restore()}
+function pola(x,{img,cx,cy,size,rot=0,cap='',sub='',fav=false,tape=true}){
+  const pad=size*.055,cs=Math.max(size*.068,30),ss=Math.max(size*.05,24),bot=sub?Math.max(size*.27,cs+ss+48):Math.max(size*.19,cs+40),w=size+pad*2,h=size+pad+bot,px=-w/2+pad,py=-h/2+pad;
+  x.save();x.translate(cx,cy);x.rotate(rot*Math.PI/180);
+  x.save();x.shadowColor='rgba(91,58,67,.22)';x.shadowBlur=size*.07;x.shadowOffsetY=size*.03;x.fillStyle='#fff';rrect(x,-w/2,-h/2,w,h,size*.025);x.fill();x.restore();
+  x.save();rrect(x,px,py,size,size,size*.018);x.clip();x.fillStyle='#ffe9ee';x.fillRect(px,py,size,size);if(img)cover(x,img,px,py,size);x.restore();
+  const block=sub?cs+12+ss:cs,capY=py+size+(bot-block)/2+cs/2;
+  txt(x,cap,0,capY,{size:cs,max:size});
+  if(sub)txt(x,sub,0,capY+cs/2+12+ss/2,{size:ss,weight:600,color:CC.soft,max:size});
+  if(fav)heartSticker(x,px+size-size*.09,py+size*.09,size*.065);
+  if(tape){x.save();x.translate(0,-h/2);x.rotate(-.07);x.fillStyle='rgba(255,165,186,.62)';x.fillRect(-size*.16,-size*.035,size*.32,size*.07);x.restore()}
+  x.restore()}
+function brand(x,W,y){const label='logged with Nibble';x.font=`700 34px ${CF}`;const pw=x.measureText(label).width+150,ph=84,l=(W-pw)/2;
+  x.save();x.shadowColor='rgba(239,109,138,.2)';x.shadowBlur=24;x.shadowOffsetY=8;x.fillStyle='#fff';rrect(x,l,y-ph/2,pw,ph,ph/2);x.fill();x.restore();
+  oni(x,l+20,y-33,68);txt(x,label,l+100,y,{size:34,align:'left',color:CC.rose})}
+function canvasFor(fmt){const c=document.createElement('canvas');c.width=1080;c.height=fmt==='story'?1920:1350;const x=c.getContext('2d');cardBg(x,c.width,c.height);return[c,x]}
+async function mealCard(m,fmt){const[c,x]=canvasFor(fmt),W=c.width,H=c.height,st=fmt==='story',t=T(m.type);
+  const img=await imgFrom(store.photoUrl(m)).catch(()=>null),hy=st?330:115;
+  txt(x,fmtDay(m.at,{weekday:'long',day:'numeric',month:'long'}),W/2,hy,{size:40,color:CC.soft});
+  txt(x,`My ${t.k} ${t.e}`,W/2,hy+(st?95:80),{size:st?92:80,weight:800,max:W-120});
+  const size=st?780:640,sub=(m.note||'').trim(),h=size*(1.055+(sub?.27:.19));
+  pola(x,{img,cx:W/2,cy:hy+(st?205:160)+h/2,size,rot:-2.5,cap:`${t.e} ${cap(t.k)} · ${fmtTime(m.at)}`,sub,fav:m.fav});
+  brand(x,W,st?H-260:H-78);return c}
+async function dayCard(list,fmt){const[c,x]=canvasFor(fmt),W=c.width,H=c.height,st=fmt==='story',d=list[0].at,hy=st?330:105;
+  txt(x,fmtDay(d,{weekday:'long',day:'numeric',month:'long'}),W/2,hy,{size:40,color:CC.soft});
+  txt(x,dayKey(d)===dayKey(Date.now())?'What I ate today':'What I ate',W/2,hy+(st?95:76),{size:st?92:76,weight:800});
+  txt(x,`${list.length} ${list.length===1?'meal':'meals'} · ${list.map(m=>T(m.type).e).join('')}`,W/2,hy+(st?180:146),{size:38,weight:700,color:CC.soft,max:W-160});
+  const shown=list.slice(0,6),n=shown.length,[cols,rows]=n===1?[1,1]:n===2?(st?[1,2]:[2,1]):n<=4?[2,2]:(st?[2,3]:[3,2]);
+  const top=hy+(st?240:195),bot=st?H-340:H-150,cw=(W-80)/cols,ch=(bot-top)/rows,size=Math.min(cw*.8,ch*.9/1.36);
+  const imgs=await Promise.all(shown.map(m=>imgFrom(store.photoUrl(m)).catch(()=>null))),tilts=[-3,2.5,2,-2.5,-1.5,3];
+  shown.forEach((m,i)=>{const row=Math.floor(i/cols),inRow=Math.min(cols,n-row*cols),off=(cols-inRow)*cw/2,t=T(m.type);
+    pola(x,{img:imgs[i],cx:40+off+cw*(i%cols+.5),cy:top+ch*(row+.5),size,rot:tilts[i%6],cap:`${t.e} ${cap(t.k)}`,sub:fmtTime(m.at),fav:m.fav,tape:i%2===0})});
+  if(list.length>6){const a=W-150,b=bot-30;x.fillStyle=CC.rose;x.beginPath();x.arc(a,b,70,0,7);x.fill();txt(x,`+${list.length-6}`,a,b,{size:48,weight:800,color:'#fff'})}
+  brand(x,W,st?H-260:H-72);return c}
+function shareSheet(kind,data){let fmt='post',file=null,url=null,job=0;
+  openSheet(s=>{const close=s.close;s.close=()=>{if(url)URL.revokeObjectURL(url);close()};
+    s.el.innerHTML=top(kind==='meal'?'Share this meal 💌':'Share this day 💌')+`<div class="seg"><button data-f="post" aria-pressed="true">Post · Chat</button><button data-f="story" aria-pressed="false">Story</button></div><div class="share-prev"><img id="sp-img" alt="Share picture preview"></div><button class="primary" id="sp-go" disabled>Making it cute…</button><p class="hint">Pick Telegram, WhatsApp or Instagram from the share menu</p>`;
+    wire(s);const go=s.el.querySelector('#sp-go'),im=s.el.querySelector('#sp-img');
+    const build=async()=>{const my=++job;file=null;go.disabled=true;go.textContent='Making it cute…';
+      try{const c=kind==='meal'?await mealCard(data,fmt):await dayCard(data,fmt);const blob=await toBlob(c,.92);if(my!==job)return;
+        file=new File([blob],`nibble-${dayKey(kind==='meal'?data.at:data[0].at)}.jpg`,{type:'image/jpeg'});if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(blob);im.src=url;go.disabled=false;go.textContent='💌 Share'}
+      catch(e){if(my===job){go.textContent='Could not make the picture';toast('Could not make the picture 😢')}}};
+    s.el.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{if(fmt===b.dataset.f)return;fmt=b.dataset.f;s.el.querySelectorAll('[data-f]').forEach(o=>o.setAttribute('aria-pressed',o===b));build()});
+    go.onclick=()=>{if(file)shareFileNow(file)};
+    build()})}
+
 /* ---------- settings & backup ---------- */
-async function shareOrDownload(file){
-  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'Nibble backup'});return}catch(e){if(e&&e.name==='AbortError')return}}
-  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+function downloadFile(file){const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+// Call straight from a tap: iPhone only opens the share menu if nothing slow happens first.
+function shareFileNow(file){if(navigator.canShare&&navigator.canShare({files:[file]}))navigator.share({files:[file]}).catch(e=>{if(!e||e.name!=='AbortError')downloadFile(file)});else downloadFile(file)}
 function settingsSheet(){openSheet(s=>{
   const days=Object.keys(byDay()).length,favs=meals.filter(m=>m.fav).length;
   s.el.innerHTML=top('Settings ⚙️')+`<div class="row"><span>Meals logged</span><span>${meals.length}</span></div><div class="row"><span>Days with photos</span><span>${days}</span></div><div class="row"><span>Favourites</span><span>${favs}</span></div><div class="row"><span>Space used</span><span id="used">…</span></div>
@@ -327,9 +396,11 @@ function settingsSheet(){openSheet(s=>{
   wire(s);
   if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{const el=s.el.querySelector('#used');if(el)el.textContent=(e.usage/1048576).toFixed(1)+' MB'}).catch(()=>{});
   const bk=s.el.querySelector('#bk');
-  bk.onclick=async()=>{bk.disabled=true;bk.textContent='Packing your meals…';
-    try{const data=await store.exportAll();const file=new File([JSON.stringify(data)],`nibble-backup-${dayKey(new Date())}.json`,{type:'application/json'});await shareOrDownload(file)}
-    catch(e){toast('Backup failed 😢')}bk.disabled=false;bk.textContent='💾 Save a backup'}})}
+  let ready=null;
+  bk.onclick=async()=>{if(ready){shareFileNow(ready);return}
+    bk.disabled=true;bk.textContent='Packing your meals…';
+    try{const data=await store.exportAll();ready=new File([JSON.stringify(data)],`nibble-backup-${dayKey(new Date())}.json`,{type:'application/json'});bk.textContent='📤 Save backup file';toast('Backup ready! Tap again to save it')}
+    catch(e){bk.textContent='💾 Save a backup';toast('Backup failed 😢')}bk.disabled=false}})}
 $('restore').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const n=await store.importAll(JSON.parse(await f.text()));while(sheets.length)sheets[sheets.length-1].close();toast(`Restored ${n} meals 🎉`)}catch(err){toast("That doesn't look like a Nibble backup")}};
 $('gear').onclick=()=>settingsSheet();
