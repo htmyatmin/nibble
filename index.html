@@ -14,13 +14,36 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<script>
+// Pastel colour themes. a = accent, a2 = lighter accent; light/dark = page colours for each mode.
+window.NIBBLE_THEMES=[
+ {id:'strawberry',name:'Strawberry',e:'🍓',a:'#ef6d8a',a2:'#ff9aa9',l:{bg:'#fff6ee',tint:'#ffd6de',dot:'#ffd9e1',cell:'#fff1f3',line:'#f6dde3',ink:'#5b3a43',soft:'#9b7880'},d:{bg:'#231a1e',tint:'#6b3445',dot:'#3b2930',cell:'#3b2a31',line:'#4a3239',ink:'#fbe9ee',soft:'#c9a9b2',card:'#33252b'}},
+ {id:'peach',name:'Peach',e:'🍑',a:'#f0876a',a2:'#ffb39c',l:{bg:'#fff7f2',tint:'#ffe0d4',dot:'#ffdccd',cell:'#fff0ea',line:'#f7e0d6',ink:'#5e3d33',soft:'#9e7d72'},d:{bg:'#241b18',tint:'#6b3f33',dot:'#3a2a25',cell:'#3a2b26',line:'#4b3730',ink:'#ffece5',soft:'#cdaea4',card:'#33261f'}},
+ {id:'mango',name:'Mango',e:'🥭',a:'#eb9a32',a2:'#ffc46b',l:{bg:'#fffaf0',tint:'#ffe8c4',dot:'#ffe6c2',cell:'#fff4e2',line:'#f6e6c9',ink:'#5c4426',soft:'#9c8160'},d:{bg:'#231d15',tint:'#6b4d24',dot:'#382d1f',cell:'#382d20',line:'#4a3b28',ink:'#fff1dd',soft:'#cdb593',card:'#30281c'}},
+ {id:'matcha',name:'Matcha',e:'🍵',a:'#58a877',a2:'#8fd1a6',l:{bg:'#f6fbf3',tint:'#d4f0dd',dot:'#d6eedc',cell:'#eef8ef',line:'#d9ecdd',ink:'#2f4a3a',soft:'#6f8a78'},d:{bg:'#18211b',tint:'#2f5240',dot:'#24332a',cell:'#25332a',line:'#314437',ink:'#e6f5ea',soft:'#a3bfae',card:'#212d25'}},
+ {id:'blueberry',name:'Blueberry',e:'🫐',a:'#6b8ff0',a2:'#9db5ff',l:{bg:'#f5f8ff',tint:'#dbe5ff',dot:'#dce5fb',cell:'#eef3ff',line:'#dbe3f6',ink:'#34405e',soft:'#7684a3'},d:{bg:'#181c27',tint:'#33406a',dot:'#252c3d',cell:'#252c3e',line:'#323b52',ink:'#e6ecff',soft:'#a5b1cf',card:'#212737'}},
+ {id:'lavender',name:'Lavender',e:'🪻',a:'#a17be8',a2:'#c3a6ff',l:{bg:'#faf6ff',tint:'#ebe0ff',dot:'#e9defb',cell:'#f4eeff',line:'#e6dcf6',ink:'#4a3a63',soft:'#8a7aa5'},d:{bg:'#1f1a27',tint:'#4a3a6e',dot:'#2d2639',cell:'#2e263b',line:'#3c3250',ink:'#f0e8ff',soft:'#bcaed6',card:'#2a2335'}}];
+window.nibbleTheme=function(id){
+  var list=window.NIBBLE_THEMES,t=list[0];for(var i=0;i<list.length;i++)if(list[i].id===id)t=list[i];
+  var hexA=function(h,a){return 'rgba('+parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16)+','+a+')'};
+  var r=document.documentElement.style,L=t.l,D=t.d,ld=function(k){return 'light-dark('+L[k]+','+D[k]+')'};
+  r.setProperty('--rose',t.a);r.setProperty('--rose2',t.a2);r.setProperty('--glow',hexA(t.a,.42));
+  r.setProperty('--bg',ld('bg'));r.setProperty('--pink',ld('tint'));r.setProperty('--dot',ld('dot'));r.setProperty('--cell',ld('cell'));
+  r.setProperty('--line',ld('line'));r.setProperty('--ink',ld('ink'));r.setProperty('--soft',ld('soft'));
+  r.setProperty('--card','light-dark(#fff,'+D.card+')');r.setProperty('--shadow','light-dark('+hexA(t.a,.16)+',rgba(0,0,0,.35))');
+  r.setProperty('--pi',L.ink);r.setProperty('--ps',L.soft);
+  var m=document.querySelectorAll('meta[name=theme-color]');if(m[0])m[0].content=L.bg;if(m[1])m[1].content=D.bg;
+  try{localStorage.setItem('nibble-theme',t.id)}catch(e){}
+  return t};
+(function(){var id='strawberry';try{id=localStorage.getItem('nibble-theme')||id}catch(e){}window.NIBBLE_THEME=window.nibbleTheme(id)})();
+</script>
 <style>
 /* VOICE: sweet, playful, tidy — a pocket food diary
    IDEA: a sticker-and-polaroid scrapbook calendar
    PICTURE: the month grid itself, every day a tiny meal photo
    COLOUR and TYPE: cream + strawberry rose, pastel meal chips; iOS rounded system font
    LAYOUT: one phone column; header, stats, calendar, today's plate, floating snap button */
-:root{--fh:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold",system-ui,sans-serif;--fb:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;color-scheme:light dark;--bg:light-dark(#fff6ee,#231a1e);--card:light-dark(#fff,#33252b);--ink:light-dark(#5b3a43,#fbe9ee);--soft:light-dark(#9b7880,#c9a9b2);--rose:#ef6d8a;--rose2:#ff9aa9;--pink:light-dark(#ffd6de,#6b3445);--peach:light-dark(#ffdcc7,#6a4033);--mint:light-dark(#d2f1e1,#2f5444);--butter:light-dark(#fff0b5,#5e5226);--lav:light-dark(#e5dfff,#433c69);--dot:light-dark(#ffd9e1,#3b2930);--cell:light-dark(#fff1f3,#3b2a31);--line:light-dark(#f6dde3,#4a3239);--shadow:light-dark(rgba(239,109,138,.16),rgba(0,0,0,.35))}
+:root{--fh:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold",system-ui,sans-serif;--fb:ui-rounded,"SF Pro Rounded",system-ui,sans-serif;color-scheme:light dark;--bg:light-dark(#fff6ee,#231a1e);--card:light-dark(#fff,#33252b);--ink:light-dark(#5b3a43,#fbe9ee);--soft:light-dark(#9b7880,#c9a9b2);--rose:#ef6d8a;--rose2:#ff9aa9;--pink:light-dark(#ffd6de,#6b3445);--peach:light-dark(#ffdcc7,#6a4033);--mint:light-dark(#d2f1e1,#2f5444);--butter:light-dark(#fff0b5,#5e5226);--lav:light-dark(#e5dfff,#433c69);--dot:light-dark(#ffd9e1,#3b2930);--cell:light-dark(#fff1f3,#3b2a31);--line:light-dark(#f6dde3,#4a3239);--shadow:light-dark(rgba(239,109,138,.16),rgba(0,0,0,.35));--glow:rgba(239,109,138,.42);--pi:#5b3a43;--ps:#9b7880}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
@@ -60,17 +83,17 @@ header .date{color:var(--soft);font-size:14px}
 .section-title h2{font-size:22px}
 .strip{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:8px 4px 12px}
 .strip>.pola{flex:none;width:140px;scroll-snap-align:start}
-.pola{background:#fff;border-radius:10px;padding:8px 8px 6px;box-shadow:0 6px 16px rgba(91,58,67,.16);color:#5b3a43;text-align:center;transition:transform .15s;position:relative;display:block;width:100%}
+.pola{background:#fff;border-radius:10px;padding:8px 8px 6px;box-shadow:0 6px 16px rgba(60,40,50,.16);color:var(--pi);text-align:center;transition:transform .15s;position:relative;display:block;width:100%}
 .pola:active{transform:scale(.95)!important}
 .pola .ph{aspect-ratio:1;border-radius:6px;overflow:hidden;background:#ffe9ee}
 .pola img{width:100%;height:100%;object-fit:cover;display:block}
 .pola .cap{font:600 14px var(--fh);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pola .sub{font-size:13px;color:#9b7880;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pola .sub{font-size:13px;color:var(--ps);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pola .heart{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;background:var(--rose);display:grid;place-items:center}
 .empty{text-align:center;padding:18px 8px;color:var(--soft);font-weight:700}
 .empty svg{width:64px;height:64px;animation:bob 2.6s ease-in-out infinite}
 .empty h3{color:var(--ink);font-size:18px;margin:6px 0 2px}
-.snap{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:16px 28px;border-radius:99px;background:linear-gradient(135deg,var(--rose2),var(--rose));color:#fff;font:700 18px var(--fh);box-shadow:0 10px 24px rgba(239,109,138,.45);border:3px solid rgba(255,255,255,.65);z-index:5;transition:transform .15s;white-space:nowrap}
+.snap{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:16px 28px;border-radius:99px;background:linear-gradient(135deg,var(--rose2),var(--rose));color:#fff;font:700 18px var(--fh);box-shadow:0 10px 24px var(--glow);border:3px solid rgba(255,255,255,.65);z-index:5;transition:transform .15s;white-space:nowrap}
 .snap:active{transform:translateX(-50%) scale(.93)}
 .note{font-size:13px;color:var(--soft);text-align:center;margin-top:14px;font-weight:700}
 /* sheets */
@@ -87,14 +110,14 @@ header .date{color:var(--soft);font-size:14px}
 .chip{border-radius:16px;padding:9px 2px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);text-align:center;transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
 .chip em{display:block;font-style:normal;font-size:26px;line-height:1.2}
 .chip span{font-size:13px;font-weight:800}
-.chip[aria-pressed=true]{transform:scale(1.07);box-shadow:inset 0 0 0 1.5px rgba(91,58,67,.18);color:#5b3a43}
+.chip[aria-pressed=true]{transform:scale(1.07);box-shadow:inset 0 0 0 1.5px rgba(60,40,50,.18);color:var(--pi)}
 .field{width:100%;border:0;border-radius:18px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);padding:13px 15px;font-size:16px;font-weight:700}
 textarea.field{resize:vertical;min-height:84px}
 .fav{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:14px;padding:13px 15px;border-radius:18px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);font-weight:800}
 .fav .sw{width:50px;height:30px;border-radius:15px;background:var(--line);position:relative;transition:background .2s}
 .fav .sw:after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.3,1.6,.5,1);box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .fav[aria-pressed=true] .sw{background:var(--rose)}.fav[aria-pressed=true] .sw:after{transform:translateX(20px)}
-.primary{width:100%;margin-top:20px;padding:16px;border-radius:99px;background:linear-gradient(135deg,var(--rose2),var(--rose));color:#fff;font:700 18px var(--fh);box-shadow:0 8px 20px rgba(239,109,138,.4)}
+.primary{width:100%;margin-top:20px;padding:16px;border-radius:99px;background:linear-gradient(135deg,var(--rose2),var(--rose));color:#fff;font:700 18px var(--fh);box-shadow:0 8px 20px var(--glow)}
 .primary[disabled]{opacity:.6}
 .ghost{width:100%;margin-top:12px;padding:14px;border-radius:18px;border:1.5px dashed var(--rose);color:var(--rose);font-weight:800}
 .danger{background:var(--rose);color:#fff;border-style:solid}
@@ -104,6 +127,10 @@ textarea.field{resize:vertical;min-height:84px}
 .wall{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px;padding:8px 4px}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:99px;font-weight:800;z-index:30;animation:fade .2s;max-width:90vw;text-align:center}
 .hidden{display:none!important}
+.themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.theme{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px 10px;border-radius:18px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line);font-weight:800;font-size:14px;transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
+.theme i{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:22px;border:4px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.12)}
+.theme[aria-pressed=true]{box-shadow:inset 0 0 0 2.5px var(--rose);transform:scale(1.04)}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--card);border-radius:16px;padding:5px;box-shadow:inset 0 0 0 1.5px var(--line);margin-bottom:14px}
 .seg button{padding:10px;border-radius:12px;font-weight:800;min-height:44px}
 .seg button[aria-pressed=true]{background:var(--rose);color:#fff}
@@ -132,7 +159,7 @@ textarea.field{resize:vertical;min-height:84px}
     </div>
     <div class="hdr-right">
     <button class="gear" id="gear" aria-label="Settings and backup"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A7.5 7.5 0 0 0 7 6.5l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 2.6-1.5l2.4 1 2-3.4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
-    <svg class="mascot" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="52" r="46" fill="#fff"/><circle cx="50" cy="52" r="40" fill="none" stroke="#ffd0da" stroke-width="3"/><path d="M50 18c5 0 8 3 11 8l22 38c4 8-1 16-10 16H27c-9 0-14-8-10-16l22-38c3-5 6-8 11-8z" fill="#fffaf5" stroke="#7a4f59" stroke-width="2.5"/><rect x="39" y="58" width="22" height="22" rx="4" fill="#3a4a44"/><circle cx="41" cy="48" r="3.2" fill="#5b3a43"/><circle cx="59" cy="48" r="3.2" fill="#5b3a43"/><path d="M46 52q4 4 8 0" fill="none" stroke="#5b3a43" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="34" cy="54" rx="5" ry="3" fill="#ffadbc"/><ellipse cx="66" cy="54" rx="5" ry="3" fill="#ffadbc"/></svg>
+    <svg class="mascot" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="52" r="46" fill="#fff"/><circle cx="50" cy="52" r="40" fill="none" style="stroke:var(--pink)" stroke-width="3"/><path d="M50 18c5 0 8 3 11 8l22 38c4 8-1 16-10 16H27c-9 0-14-8-10-16l22-38c3-5 6-8 11-8z" fill="#fffaf5" stroke="#7a4f59" stroke-width="2.5"/><rect x="39" y="58" width="22" height="22" rx="4" fill="#3a4a44"/><circle cx="41" cy="48" r="3.2" fill="#5b3a43"/><circle cx="59" cy="48" r="3.2" fill="#5b3a43"/><path d="M46 52q4 4 8 0" fill="none" stroke="#5b3a43" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="34" cy="54" rx="5" ry="3" fill="#ffadbc"/><ellipse cx="66" cy="54" rx="5" ry="3" fill="#ffadbc"/></svg>
     </div>
   </header>
   <div class="install hidden" id="install"><span style="font-size:26px">🍙</span><div><b>Install Nibble</b><br>Tap <svg class="share-ico" width="18" height="18" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4M6 11H5v10h14V11h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Share, then <b>Add to Home Screen</b></div><button class="x" id="installX" aria-label="Dismiss">✕</button></div>
@@ -327,7 +354,9 @@ function daySheet(k){const [y,mo,d]=k.split('-').map(Number),date=new Date(y,mo-
 
 /* ---------- share cards ---------- */
 const CF='ui-rounded,"SF Pro Rounded",system-ui,sans-serif';
-const CC={bg:'#fff6ee',dot:'#ffd9e1',ink:'#5b3a43',soft:'#9b7880',rose:'#ef6d8a'};
+const CC={bg:'#fff6ee',dot:'#ffd9e1',ink:'#5b3a43',soft:'#9b7880',rose:'#ef6d8a',tape:'#ff9aa9'};
+function syncCard(t){Object.assign(CC,{bg:t.l.bg,dot:t.l.dot,ink:t.l.ink,soft:t.l.soft,rose:t.a,tape:t.a2})}
+syncCard(window.NIBBLE_THEME||window.NIBBLE_THEMES[0]);
 const P2={body:new Path2D('M50 14c5 0 8 3 11 8l24 41c4 8-1 17-10 17H25c-9 0-14-9-10-17l24-41c3-5 6-8 11-8z'),smile:new Path2D('M46 50q4 4 8 0'),heart:new Path2D('M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z')};
 function rrect(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()}
 function fit(x,s,max){if(x.measureText(s).width<=max)return s;const a=Array.from(s);while(a.length>1&&x.measureText(a.join('')+'…').width>max)a.pop();return a.join('').trimEnd()+'…'}
@@ -348,10 +377,10 @@ function pola(x,{img,cx,cy,size,rot=0,cap='',sub='',fav=false,tape=true}){
   txt(x,cap,0,capY,{size:cs,max:size});
   if(sub)txt(x,sub,0,capY+cs/2+12+ss/2,{size:ss,weight:600,color:CC.soft,max:size});
   if(fav)heartSticker(x,px+size-size*.09,py+size*.09,size*.065);
-  if(tape){x.save();x.translate(0,-h/2);x.rotate(-.07);x.fillStyle='rgba(255,165,186,.62)';x.fillRect(-size*.16,-size*.035,size*.32,size*.07);x.restore()}
+  if(tape){x.save();x.translate(0,-h/2);x.rotate(-.07);x.globalAlpha=.6;x.fillStyle=CC.tape;x.fillRect(-size*.16,-size*.035,size*.32,size*.07);x.restore()}
   x.restore()}
 function brand(x,W,y){const label='logged with Nibble';x.font=`700 34px ${CF}`;const pw=x.measureText(label).width+150,ph=84,l=(W-pw)/2;
-  x.save();x.shadowColor='rgba(239,109,138,.2)';x.shadowBlur=24;x.shadowOffsetY=8;x.fillStyle='#fff';rrect(x,l,y-ph/2,pw,ph,ph/2);x.fill();x.restore();
+  x.save();x.shadowColor='rgba(60,40,50,.14)';x.shadowBlur=24;x.shadowOffsetY=8;x.fillStyle='#fff';rrect(x,l,y-ph/2,pw,ph,ph/2);x.fill();x.restore();
   oni(x,l+20,y-33,68);txt(x,label,l+100,y,{size:34,align:'left',color:CC.rose})}
 function canvasFor(fmt){const c=document.createElement('canvas');c.width=1080;c.height=fmt==='story'?1920:1350;const x=c.getContext('2d');cardBg(x,c.width,c.height);return[c,x]}
 async function mealCard(m,fmt){const[c,x]=canvasFor(fmt),W=c.width,H=c.height,st=fmt==='story',t=T(m.type);
@@ -391,10 +420,13 @@ function shareFileNow(file){if(navigator.canShare&&navigator.canShare({files:[fi
 function settingsSheet(){openSheet(s=>{
   const days=Object.keys(byDay()).length,favs=meals.filter(m=>m.fav).length;
   s.el.innerHTML=top('Settings ⚙️')+`<div class="row"><span>Meals logged</span><span>${meals.length}</span></div><div class="row"><span>Days with photos</span><span>${days}</span></div><div class="row"><span>Favourites</span><span>${favs}</span></div><div class="row"><span>Space used</span><span id="used">…</span></div>
+    <div class="lbl">Colour theme</div><div class="themes">${window.NIBBLE_THEMES.map(t=>`<button class="theme" data-theme-id="${t.id}" aria-pressed="${t.id===(window.NIBBLE_THEME||{}).id}"><i style="background:linear-gradient(135deg,${t.a2},${t.a})">${t.e}</i>${t.name}</button>`).join('')}</div>
     <div class="lbl">Backup</div><p style="margin:0 2px;color:var(--soft);font-weight:700;font-size:14px">Your meals are saved only on this phone. Save a backup to Files or iCloud Drive now and then, so you can restore it on a new phone.</p>
     <button class="primary" id="bk">💾 Save a backup</button><label class="ghost" for="restore" style="display:block;text-align:center;cursor:pointer">📂 Restore from a backup</label>`;
   wire(s);
   if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{const el=s.el.querySelector('#used');if(el)el.textContent=(e.usage/1048576).toFixed(1)+' MB'}).catch(()=>{});
+  s.el.querySelectorAll('[data-theme-id]').forEach(b=>b.onclick=()=>{const t=window.nibbleTheme(b.dataset.themeId);window.NIBBLE_THEME=t;syncCard(t);
+    s.el.querySelectorAll('[data-theme-id]').forEach(o=>o.setAttribute('aria-pressed',o===b))});
   const bk=s.el.querySelector('#bk');
   let ready=null;
   bk.onclick=async()=>{if(ready){shareFileNow(ready);return}
